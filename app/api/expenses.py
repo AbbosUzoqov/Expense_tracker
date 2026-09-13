@@ -9,9 +9,11 @@ router = APIRouter(prefix="/expenses", tags=["Expenses"])
 
 @router.get("/")
 def get_expenses(db: Session = Depends(get_db), skip: int = 0, limit: int = 10, category: str | None = None, sort_by: str = 'created_at', order: str = "desc"):
-    expenses = db.query(Expense).offset(skip).limit(limit).all()
-    category = db.query(Expense).filter(Expense.category==category)
-    db.order_by(desc)
+    query = db.query(Expense)
+    if category:
+        query = query.filter(Expense.category == category)
+        query = query.offset(skip).limit(limit)
+    expenses = query.all()
     return expenses
 
 @router.get("/{expense_id}")

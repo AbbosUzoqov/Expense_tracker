@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 class ExpenseCreate(BaseModel):
+  title: str
   amount: float
   category: str
 
