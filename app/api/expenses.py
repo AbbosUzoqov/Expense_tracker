@@ -1,18 +1,40 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import desc
+from sqlalchemy import desc, asc
 from sqlalchemy.orm import Session
 from database.database import get_db
 from models.expense import Expense
 from schemas.expense import ExpenseCreate, ExpenseResponse
 
 router = APIRouter(prefix="/expenses", tags=["Expenses"])
+ALLOWED_SORT_FIELDS = {
+    "created_at": Expense.created_at,
+    "amount": Expense.amount,
+    "category": Expense.category,
+}
 
 @router.get("/")
-def get_expenses(db: Session = Depends(get_db), skip: int = 0, limit: int = 10, category: str | None = None, sort_by: str = 'created_at', order: str = "desc"):
+def get_expenses(
+    db: Session = Depends(get_db), 
+    skip: int = 0, 
+    limit: int = 10, 
+    category: str | None = None, 
+    sort_by: str = 'created_at', 
+    order: str = "desc"
+):
     query = db.query(Expense)
     if category:
         query = query.filter(Expense.category == category)
-        query = query.offset(skip).limit(limit)
+    
+    allowed_fields = ALLOWED_SORT_FIELDS
+    if sort_by in allowed_fields:
+        field = allowed_fields[sort_by]
+    else:
+        field = Expense.created_at
+    if order == 'asc':
+        query = query.order_by(asc(field))
+    else:
+        query = query.order_by(desc(field))
+    query = query.offset(skip).limit(limit)
     expenses = query.all()
     return expenses
 
