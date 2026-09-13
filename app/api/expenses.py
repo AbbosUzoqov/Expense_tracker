@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from database.database import get_db
 from models.expense import Expense
@@ -7,8 +8,10 @@ from schemas.expense import ExpenseCreate, ExpenseResponse
 router = APIRouter(prefix="/expenses", tags=["Expenses"])
 
 @router.get("/")
-def get_expenses(db: Session = Depends(get_db)):
-    expenses = db.query(Expense).all()
+def get_expenses(db: Session = Depends(get_db), skip: int = 0, limit: int = 10, category: str | None = None, sort_by: str = 'created_at', order: str = "desc"):
+    expenses = db.query(Expense).offset(skip).limit(limit).all()
+    category = db.query(Expense).filter(Expense.category==category)
+    db.order_by(desc)
     return expenses
 
 @router.get("/{expense_id}")
