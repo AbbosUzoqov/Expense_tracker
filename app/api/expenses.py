@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import desc, asc
 from sqlalchemy.orm import Session
 from database.database import get_db
@@ -15,8 +15,8 @@ ALLOWED_SORT_FIELDS = {
 @router.get("/")
 def get_expenses(
     db: Session = Depends(get_db), 
-    skip: int = 0, 
-    limit: int = 10, 
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=0, le=100), 
     category: str | None = None, 
     sort_by: str = 'created_at', 
     order: str = "desc"
