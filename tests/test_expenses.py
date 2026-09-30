@@ -1,8 +1,10 @@
-def make(client, amount="10.00", category="food"):
-    r = client.post("/expenses/", json={"amount": amount, "category": category})
-    assert r.status_code == 201
+def make(client, title="Coffee", amount="10.00", category="food"):
+    r = client.post(
+        "/expenses/",
+        json={"title": title, "amount": amount, "category": category},
+    )
+    assert r.status_code == 201, r.json()
     return r.json()
-
 
 def test_create_and_get(client):
     e = make(client)
@@ -16,19 +18,30 @@ def test_get_404(client):
 
 
 def test_create_validation(client):
-    r = client.post("/expenses/", json={"amount": "-5", "category": "food"})
-    assert r.status_code == 422  # если в схеме есть gt=0; если нет, добавь её
+    r = client.post("/expenses/", json={"title": "x", "amount": "-5", "category": "food"})
+    assert r.status_code == 422
+
+
+def test_create_empty_title(client):
+    r = client.post("/expenses/", json={"title": "", "amount": "5", "category": "food"})
+    assert r.status_code == 422
 
 
 def test_update(client):
     e = make(client)
-    r = client.put(f"/expenses/{e['id']}", json={"amount": "99.99", "category": "rent"})
+    r = client.put(
+        f"/expenses/{e['id']}",
+        json={"title": "Rent", "amount": "99.99", "category": "rent"},
+    )
     assert r.status_code == 200
-    assert r.json()["category"] == "rent"
+    body = r.json()
+    assert body["title"] == "Rent"
+    assert body["category"] == "rent"
+    assert float(body["amount"]) == 99.99
 
 
 def test_update_404(client):
-    r = client.put("/expenses/999", json={"amount": "1", "category": "x"})
+    r = client.put("/expenses/999", json={"title": "x", "amount": "1", "category": "x"})
     assert r.status_code == 404
 
 

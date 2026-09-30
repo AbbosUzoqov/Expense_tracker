@@ -1,55 +1,49 @@
+from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import desc, asc
 from sqlalchemy.orm import Session
 from database.database import get_db
 from models.expense import Expense
 from schemas.expense import ExpenseCreate, ExpenseResponse
-from typing import Literal
 
 router = APIRouter(prefix="/expenses", tags=["Expenses"])
+
 ALLOWED_SORT_FIELDS = {
     "created_at": Expense.created_at,
     "amount": Expense.amount,
     "category": Expense.category,
 }
-def get_expense_or_404(expense_id:int, db: Session) -> Expense:
+
+
+def get_expense_or_404(expense_id: int, db: Session) -> Expense:
     expense = db.get(Expense, expense_id)
     if expense is None:
-        raise HTTPException(status_code=404, detail='Expense not found')
+        raise HTTPException(status_code=404, detail="Expense not found")
     return expense
 
-@router.get("/")
+
+@router.get("/", response_model=list[ExpenseResponse])
 def get_expenses(
-    db: Session = Depends(get_db), 
+    db: Session = Depends(get_db),
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100), 
-    category: str | None = None, 
-    sort_by: Literal["created_at", 'amount', 'category'] = 'created_at', 
+    limit: int = Query(10, ge=1, le=100),
+    category: str | None = None,
+    sort_by: Literal["created_at", "amount", "category"] = "created_at",
     order: Literal["asc", "desc"] = "desc",
 ):
     query = db.query(Expense)
     if category:
         query = query.filter(Expense.category == category)
-    
-    allowed_fields = ALLOWED_SORT_FIELDS
-    if sort_by in allowed_fields:
-        field = allowed_fields[sort_by]
-    else:
-        field = Expense.created_at
-    if order == 'asc':
-        query = query.order_by(asc(field))
-    else:
-        query = query.order_by(desc(field))
-    query = query.offset(skip).limit(limit)
-    expenses = query.all()
-    return expenses
+
+    direction = asc if order == "asc" else desc
+    query = query.order_by(direction(ALLOWED_SORT_FIELDS[sort_by]), direction(Expense.id))
+    return query.offset(skip).limit(limit).all()
+
 
 @router.get("/{expense_id}", response_model=ExpenseResponse)
 def get_expense_by_id(expense_id: int, db: Session = Depends(get_db)):
-    expense = db.query(Expense).filter(Expense.id == expense_id).first()
-    if expense is None:
-        raise HTTPException(status_code=404, detail="Expense not found")
-    return expense
+    return get_expense_or_404(expense_id, db)
+
 
 @router.post("/", response_model=ExpenseResponse, status_code=status.HTTP_201_CREATED)
 def create_expense(expense_data: ExpenseCreate, db: Session = Depends(get_db)):
@@ -59,16 +53,16 @@ def create_expense(expense_data: ExpenseCreate, db: Session = Depends(get_db)):
     db.refresh(new_expense)
     return new_expense
 
+
 @router.put("/{expense_id}", response_model=ExpenseResponse)
-def put_expense(expense_id: int, expected_data: ExpenseCreate, db: Session = Depends(get_db)):
-    put_expenses = db.query(Expense).filter(Expense.id == expense_id).first()
-    if put_expenses is None:
-        raise HTTPException(status_code=404, detail="Expense not found")
-    put_expenses.amount = expected_data.amount
-    put_expenses.category = expected_data.category
+def update_expense(expense_id: int, data: ExpenseCreate, db: Session = Depends(get_db)):
+    expense = get_expense_or_404(expense_id, db)
+    for field, value in data.model_dump().items():
+        setattr(expense, field, value)
     db.commit()
-    db.refresh(put_expenses)
-    return put_expenses
+    db.refresh(expense)
+    return expense
+
 
 @router.delete("/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_expense(expense_id: int, db: Session = Depends(get_db)):
