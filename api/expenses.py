@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from database.database import get_db
 from models.expense import Expense
 from schemas.expense import ExpenseCreate, ExpenseResponse
+from typing import Literal
 
 router = APIRouter(prefix="/expenses", tags=["Expenses"])
 ALLOWED_SORT_FIELDS = {
@@ -11,15 +12,20 @@ ALLOWED_SORT_FIELDS = {
     "amount": Expense.amount,
     "category": Expense.category,
 }
+def get_expense_or_404(expense_id:int, db: Session) -> Expense:
+    expense = db.get(Expense, expense_id)
+    if expense is None:
+        raise HTTPException(status_code=404, detail='Expense not found')
+    return expense
 
 @router.get("/")
 def get_expenses(
     db: Session = Depends(get_db), 
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=0, le=100), 
+    limit: int = Query(10, ge=1, le=100), 
     category: str | None = None, 
-    sort_by: str = 'created_at', 
-    order: str = "desc"
+    sort_by: Literal["created_at", 'amount', 'category'] = 'created_at', 
+    order: Literal["asc", "desc"] = "desc",
 ):
     query = db.query(Expense)
     if category:
@@ -38,21 +44,22 @@ def get_expenses(
     expenses = query.all()
     return expenses
 
-@router.get("/{expense_id}")
+@router.get("/{expense_id}", response_model=ExpenseResponse)
 def get_expense_by_id(expense_id: int, db: Session = Depends(get_db)):
     expense = db.query(Expense).filter(Expense.id == expense_id).first()
     if expense is None:
         raise HTTPException(status_code=404, detail="Expense not found")
     return expense
 
-@router.post("/", response_model=ExpenseResponse)
+@router.post("/", response_model=ExpenseResponse, status_code=status.HTTP_201_CREATED)
 def create_expense(expense_data: ExpenseCreate, db: Session = Depends(get_db)):
     new_expense = Expense(**expense_data.model_dump())
     db.add(new_expense)
     db.commit()
     db.refresh(new_expense)
     return new_expense
-@router.put("/expense_id}")
+
+@router.put("/{expense_id}", response_model=ExpenseResponse)
 def put_expense(expense_id: int, expected_data: ExpenseCreate, db: Session = Depends(get_db)):
     put_expenses = db.query(Expense).filter(Expense.id == expense_id).first()
     if put_expenses is None:
@@ -62,3 +69,9 @@ def put_expense(expense_id: int, expected_data: ExpenseCreate, db: Session = Dep
     db.commit()
     db.refresh(put_expenses)
     return put_expenses
+
+@router.delete("/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_expense(expense_id: int, db: Session = Depends(get_db)):
+    expense = get_expense_or_404(expense_id, db)
+    db.delete(expense)
+    db.commit()
