@@ -82,3 +82,14 @@ def test_empty_summary(client):
     body = r.json()
     assert float(body["total"]) == 0
     assert body['by_category'] == []
+
+def test_summary_one_category(client):
+    make(client, amount="10.00", category="food")
+    make(client, amount="5.50", category="food")
+    r = client.get("/expenses/summary")
+    assert r.status_code == 200
+    body = r.json()
+    assert float(body["total"]) == 15.5
+    assert len(body["by_category"]) == 1
+    assert body["by_category"][0]["category"] == 'food'
+    assert float(body["by_category"][0]["total"]) == 15.5

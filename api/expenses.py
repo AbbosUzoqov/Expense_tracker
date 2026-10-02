@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from database.database import get_db
 from models.expense import Expense
 from schemas.expense import ExpenseCreate, ExpenseResponse, CategoryTotal, ExpenseSummary
+from sqlalchemy import func
 
 router = APIRouter(prefix="/expenses", tags=["Expenses"])
 
@@ -41,7 +42,14 @@ def get_expenses(
 
 @router.get("/summary", response_model=ExpenseSummary)
 def get_summary(db: Session = Depends(get_db)):
-    return {"total": 0, "by_category": []}
+    total = db.query(func.sum(Expense.amount)).scalar()
+    rows = (
+    db.query(Expense.category, func.sum(Expense.amount))
+    .group_by(Expense.category)
+    .all()
+    )
+    by_category = [{"category": cat, "total": tot} for cat, tot in rows]
+    return {"total": total or 0, "by_category": by_category}
 
 @router.get("/{expense_id}", response_model=ExpenseResponse)
 def get_expense_by_id(expense_id: int, db: Session = Depends(get_db)):
@@ -72,3 +80,4 @@ def delete_expense(expense_id: int, db: Session = Depends(get_db)):
     expense = get_expense_or_404(expense_id, db)
     db.delete(expense)
     db.commit()
+
