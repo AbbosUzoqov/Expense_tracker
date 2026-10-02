@@ -2,6 +2,7 @@
 from datetime import date
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from datetime import date, timedelta, datetime
 
 
 class Base(DeclarativeBase):
@@ -29,6 +30,11 @@ class Expenses(Base):
   date_time: Mapped[date]
   category_id: Mapped[int] = mapped_column(ForeignKey('category.id'))
   user_id: Mapped[int] = mapped_column(ForeignKey('user.id'))
+
+class Summary(Base):
+  __tablename__='summary'
+  date_to = datetime | None
+  date_from = datetime | None
 =======
 from datetime import date
 from sqlalchemy import ForeignKey

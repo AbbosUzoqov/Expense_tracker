@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import desc, asc
 from sqlalchemy.orm import Session
 from database.database import get_db
-from models.expense import Expense
+from models.expense import Expense, Summary
 from schemas.expense import ExpenseCreate, ExpenseResponse
 
 router = APIRouter(prefix="/expenses", tags=["Expenses"])
