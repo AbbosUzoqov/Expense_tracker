@@ -105,3 +105,15 @@ def test_summary_many_category(client):
     assert len(body["by_category"]) == 2
     result = {item["category"]: float(item["total"]) for item in body["by_category"]}
     assert result == {"food": 15.0, "rent": 50.0}
+
+def test_summary_date(client):
+    make(client, amount="10.00", category="food")
+    make(client, amount="5.00", category="food")
+    make(client, amount="50.00", category='rent')
+    r = client.get("/expenses/summary")
+    assert r.status_code == 200
+    body = r.json()
+    assert float(body["total"]) == 65.0
+    assert len(body["by_category"]) == 2
+    result = {item["category"]: float(item["total"]) for item in body["by_category"]}
+    assert result == {"food": 15.0, "rent": 50.0}
