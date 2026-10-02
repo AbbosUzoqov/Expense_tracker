@@ -31,10 +31,6 @@ class Expenses(Base):
   category_id: Mapped[int] = mapped_column(ForeignKey('category.id'))
   user_id: Mapped[int] = mapped_column(ForeignKey('user.id'))
 
-class Summary(Base):
-  __tablename__='summary'
-  date_to = datetime | None
-  date_from = datetime | None
 =======
 from datetime import date
 from sqlalchemy import ForeignKey

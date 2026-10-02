@@ -75,3 +75,10 @@ def test_pagination(client):
 
 def test_invalid_sort_field_422(client):
     assert client.get("/expenses/", params={"sort_by": "hack"}).status_code == 422
+
+def test_empty_summary(client):
+    r = client.get('/expenses/summary')
+    assert r.status_code==200
+    body = r.json()
+    assert float(body["total"]) == 0
+    assert body['by_category'] == []

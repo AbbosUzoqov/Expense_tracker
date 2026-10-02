@@ -3,8 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import desc, asc
 from sqlalchemy.orm import Session
 from database.database import get_db
-from models.expense import Expense, Summary
-from schemas.expense import ExpenseCreate, ExpenseResponse
+from models.expense import Expense
+from schemas.expense import ExpenseCreate, ExpenseResponse, CategoryTotal, ExpenseSummary
 
 router = APIRouter(prefix="/expenses", tags=["Expenses"])
 
@@ -39,6 +39,9 @@ def get_expenses(
     query = query.order_by(direction(ALLOWED_SORT_FIELDS[sort_by]), direction(Expense.id))
     return query.offset(skip).limit(limit).all()
 
+@router.get("/summary", response_model=ExpenseSummary)
+def get_summary(db: Session = Depends(get_db)):
+    return {"total": 0, "by_category": []}
 
 @router.get("/{expense_id}", response_model=ExpenseResponse)
 def get_expense_by_id(expense_id: int, db: Session = Depends(get_db)):

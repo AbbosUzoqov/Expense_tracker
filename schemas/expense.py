@@ -16,3 +16,10 @@ class ExpenseResponse(BaseModel):
   category: str 
   created_at: datetime
 
+class CategoryTotal(BaseModel):
+  category: str
+  total: Decimal
+
+class ExpenseSummary(BaseModel):
+  total: Decimal
+  by_category: list[CategoryTotal]
