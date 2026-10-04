@@ -1,3 +1,7 @@
+from datetime import datetime
+from decimal import Decimal
+from models.expense import Expense
+
 def make(client, title="Coffee", amount="10.00", category="food"):
     r = client.post(
         "/expenses/",
@@ -117,3 +121,12 @@ def test_summary_date(client):
     assert len(body["by_category"]) == 2
     result = {item["category"]: float(item["total"]) for item in body["by_category"]}
     assert result == {"food": 15.0, "rent": 50.0}
+
+def test_list_date_filter(client, db):
+    add_expense(db, datetime(2026, 10, 1, 12, 0))    
+    add_expense(db, datetime(2026, 10, 5, 12, 0))    
+    add_expense(db, datetime(2026, 10, 10, 12, 0))  
+    r = client.get("/expenses/", params={"date_from": "2026-10-02", "date_to": "2026-10-09"})
+    assert r.status_code == 200
+    assert len(r.json()) == 1
+    

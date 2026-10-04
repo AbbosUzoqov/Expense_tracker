@@ -3,10 +3,13 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-
+from datetime import date, time, timedelta, datetime
 from main import app
 from database.database import Base, get_db
-from models.expense import Expense  # noqa: F401  (чтобы таблица попала в Base)
+from models.expense import Expense  
+from datetime import datetime
+from decimal import Decimal
+from models.expense import Expense
 
 engine = create_engine(
     "sqlite://",

@@ -37,13 +37,15 @@ def get_expenses(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
     category: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     sort_by: Literal["created_at", "amount", "category"] = "created_at",
     order: Literal["asc", "desc"] = "desc",
 ):
     query = db.query(Expense)
     if category:
         query = query.filter(Expense.category == category)
-
+    query = filter_by_date(query, date_from=date_from, date_to=date_to)
     direction = asc if order == "asc" else desc
     query = query.order_by(direction(ALLOWED_SORT_FIELDS[sort_by]), direction(Expense.id))
     return query.offset(skip).limit(limit).all()

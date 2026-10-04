@@ -23,3 +23,4 @@ class CategoryTotal(BaseModel):
 class ExpenseSummary(BaseModel):
   total: Decimal
   by_category: list[CategoryTotal]
+
