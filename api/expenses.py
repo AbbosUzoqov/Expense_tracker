@@ -6,6 +6,14 @@ from database.database import get_db
 from models.expense import Expense
 from schemas.expense import ExpenseCreate, ExpenseResponse, CategoryTotal, ExpenseSummary
 from sqlalchemy import func
+from datetime import date, datetime, timedelta, time
+
+def filter_by_date(query, date_from: date | None, date_to: date | None):
+    if date_from:
+        query = query.filter(Expense.created_at >= datetime.combine(date_from, time.min))
+    if date_to:
+        query = query.filter(Expense.created_at < datetime.combine(date_to + timedelta(days=1), time.min))
+    return query
 
 router = APIRouter(prefix="/expenses", tags=["Expenses"])
 
@@ -41,13 +49,18 @@ def get_expenses(
     return query.offset(skip).limit(limit).all()
 
 @router.get("/summary", response_model=ExpenseSummary)
-def get_summary(db: Session = Depends(get_db)):
-    total = db.query(func.sum(Expense.amount)).scalar()
-    rows = (
-    db.query(Expense.category, func.sum(Expense.amount))
-    .group_by(Expense.category)
-    .all()
-    )
+def get_summary(
+    db: Session = Depends(get_db),
+    date_from: date | None = None,
+    date_to: date | None = None
+    ):
+    total_query = db.query(func.sum(Expense.amount))
+    total_query = filter_by_date(total_query,date_from=date_from,date_to=date_to)
+    total=total_query.scalar()
+    rows_query = db.query(Expense.category, func.sum(Expense.amount))
+    rows_query = filter_by_date(rows_query,date_from=date_from, date_to=date_to)
+    rows_query = rows_query.group_by(Expense.category)
+    rows = rows_query.all()
     by_category = [{"category": cat, "total": tot} for cat, tot in rows]
     return {"total": total or 0, "by_category": by_category}
 
