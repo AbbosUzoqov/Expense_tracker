@@ -9,6 +9,11 @@ def make(client, title="Coffee", amount="10.00", category="food"):
     )
     assert r.status_code == 201, r.json()
     return r.json()
+def add_expense(db, created_at, amount="10", category="food"):
+    e = Expense(title="t", amount=Decimal(amount), category=category, created_at=created_at)
+    db.add(e)
+    db.commit()
+    return e
 
 def test_create_and_get(client):
     e = make(client)
@@ -110,17 +115,16 @@ def test_summary_many_category(client):
     result = {item["category"]: float(item["total"]) for item in body["by_category"]}
     assert result == {"food": 15.0, "rent": 50.0}
 
-def test_summary_date(client):
-    make(client, amount="10.00", category="food")
-    make(client, amount="5.00", category="food")
-    make(client, amount="50.00", category='rent')
-    r = client.get("/expenses/summary")
+def test_summary_date(client, db):
+    add_expense(db, datetime(2026, 9, 1, 12, 0), amount="10", category="food")   
+    add_expense(db, datetime(2026, 9, 5, 12, 0), amount="20", category="rent")   
+    add_expense(db, datetime(2026, 9, 10, 12, 0), amount="30", category="fun")   
+    r = client.get("/expenses/summary", params={"date_from": "2026-09-03", "date_to": "2026-09-08"})
     assert r.status_code == 200
     body = r.json()
-    assert float(body["total"]) == 65.0
-    assert len(body["by_category"]) == 2
+    assert float(body["total"]) == 20
     result = {item["category"]: float(item["total"]) for item in body["by_category"]}
-    assert result == {"food": 15.0, "rent": 50.0}
+    assert result == {'rent': 20.0}
 
 def test_list_date_filter(client, db):
     add_expense(db, datetime(2026, 10, 1, 12, 0))    
