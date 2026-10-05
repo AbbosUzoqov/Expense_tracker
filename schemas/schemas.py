@@ -1,6 +1,5 @@
-from fastapi import FastAPI
 from datetime import date
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 
 class UserCreate(BaseModel):
   name: str
@@ -10,25 +9,22 @@ class UserCreate(BaseModel):
   password: str
 
 class UserOut(BaseModel):
+  model_config = ConfigDict(from_attributes=True)
   id: int
   name: str
   surname: str
   age: int
   email: EmailStr
 
-  class Config:
-    from_attributes = True
 
 class CategoryCreate(BaseModel):
   name: str
 
 class CategoryOut(BaseModel):
+  model_config = ConfigDict(from_attributes=True)
   id: int
   name: str
   user_id: int
-
-  class Config:
-    from_attributes = True
 
 class ExpenseCreate(BaseModel):
   amount: int
@@ -37,6 +33,7 @@ class ExpenseCreate(BaseModel):
   category_id: int
 
 class ExpenseOut(BaseModel):
+  model_config = ConfigDict(from_attributes=True)
   id: int
   amount: int
   description: str
@@ -44,6 +41,3 @@ class ExpenseOut(BaseModel):
   category_id: int
   user_id: int
   created_at: date
-
-  class Config:
-    from_attributes = True

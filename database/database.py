@@ -5,7 +5,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker, Session
 
 SQL_DB = 'postgresql://postgres:boss05@localhost:5432/tracker_api'
 
-engine = create_engine(SQL_DB, echo=True)
+engine = create_engine(SQL_DB, echo=False)
 
 session_local = sessionmaker(autoflush=False, autocommit=False, bind = engine)
 
