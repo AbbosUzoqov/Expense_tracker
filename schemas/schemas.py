@@ -36,7 +36,7 @@ class ExpenseOut(BaseModel):
   model_config = ConfigDict(from_attributes=True)
   id: int
   amount: int
-  description: str
+  title: str
   date_time: date
   category_id: int
   user_id: int
