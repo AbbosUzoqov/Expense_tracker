@@ -1,9 +1,9 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
+import os
 
 
-
-SQL_DB = 'postgresql://postgres:boss05@localhost:5432/tracker_api'
+SQL_DB = os.getenv("DATABASE_URL",'postgresql://postgres:boss05@localhost:5432/tracker_api')
 
 engine = create_engine(SQL_DB, echo=False)
 
