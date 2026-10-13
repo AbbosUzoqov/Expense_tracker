@@ -133,4 +133,14 @@ def test_list_date_filter(client, db):
     r = client.get("/expenses/", params={"date_from": "2026-10-02", "date_to": "2026-10-09"})
     assert r.status_code == 200
     assert len(r.json()) == 1
+
+def test_summary_date_boundary(client, db):
+    add_expense(db, datetime(2026, 10, 9, 23, 59), amount="10", category="food")
+    add_expense(db, datetime(2026, 10, 10, 0, 0), amount="20", category="rent")
+    r = client.get("/expenses/summary", params={"date_from": "2026-10-02", "date_to": "2026-10-09"})
+    assert r.status_code == 200
+    body = r.json()
+    assert float(body["total"]) == 10
+    result = {item["category"]: float(item["total"]) for item in body["by_category"]}
+    assert result == {"food": 10.0}
     
