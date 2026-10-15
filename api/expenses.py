@@ -29,7 +29,12 @@ def get_expense_or_404(expense_id: int, db: Session) -> Expense:
     if expense is None:
         raise HTTPException(status_code=404, detail="Expense not found")
     return expense
-
+def validate_date_range(
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
+) -> None:
+    if date_from and date_to and date_from > date_to:
+        raise HTTPException(status_code=422, detail="date_from must be <= date_to")
 
 @router.get("/", response_model=list[ExpenseResponse])
 def get_expenses(
@@ -39,6 +44,7 @@ def get_expenses(
     category: str | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
+    _: None = Depends(validate_date_range),
     sort_by: Literal["created_at", "amount", "category"] = "created_at",
     order: Literal["asc", "desc"] = "desc",
 ):
@@ -54,7 +60,8 @@ def get_expenses(
 def get_summary(
     db: Session = Depends(get_db),
     date_from: date | None = None,
-    date_to: date | None = None
+    date_to: date | None = None,
+    _: None = Depends(validate_date_range),
     ):
     total_query = db.query(func.sum(Expense.amount))
     total_query = filter_by_date(total_query,date_from=date_from,date_to=date_to)

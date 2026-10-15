@@ -143,4 +143,6 @@ def test_summary_date_boundary(client, db):
     assert float(body["total"]) == 10
     result = {item["category"]: float(item["total"]) for item in body["by_category"]}
     assert result == {"food": 10.0}
-    
+def test_summary_reversed_dates_422(client):
+    r = client.get("/expenses/summary", params={"date_from": "2026-10-10", "date_to": "2026-10-01"})
+    assert r.status_code == 422
